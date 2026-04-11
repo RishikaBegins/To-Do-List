@@ -1,0 +1,204 @@
+<!doctype html>
+<html>
+  <head>
+    <title>To-Do App</title>
+
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: rgb(236, 236, 221);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        width: 420px;
+        background: white;
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      }
+
+      h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #333;
+      }
+
+      .input-group {
+        display: flex;
+        gap: 10px;
+      }
+
+      input {
+        flex: 1;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        outline: none;
+      }
+
+      input:focus {
+        border-color: #6c8cff;
+      }
+
+      button {
+        padding: 10px 14px;
+        border: none;
+        border-radius: 8px;
+        background: #6c8cff;
+        color: white;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #b4b6bb;
+      }
+
+      .task {
+        margin-top: 15px;
+        padding: 12px;
+        border-radius: 10px;
+        background: #fafafa;
+        border: 1px solid #eee;
+      }
+
+      .task-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .status {
+        font-size: 12px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        text-transform: capitalize;
+      }
+
+      .todo {
+        background: #e0e0e0;
+        color: #555;
+      }
+      .in_progress {
+        background: #fff3cd;
+        color: #856404;
+      }
+      .done {
+        background: #d4edda;
+        color: #155724;
+      }
+      .blocked {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
+      select {
+        margin-top: 8px;
+        padding: 6px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+      }
+
+      .delete {
+        margin-top: 8px;
+        background: transparent;
+        color: #ff5c5c;
+        border: none;
+        cursor: pointer;
+        font-size: 13px;
+      }
+
+      .delete:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h2>To-Do</h2>
+
+      <div class="input-group">
+        <input type="text" id="title" placeholder="Add a task..." />
+        <button onclick="addTask()">Add</button>
+      </div>
+
+      <div id="tasks"></div>
+    </div>
+
+    <script>
+      const API = "http://localhost:4000";
+
+      async function loadTasks() {
+        const res = await fetch("http://localhost:4000/tasks");
+        const data = await res.json();
+
+        const container = document.getElementById("tasks");
+        container.innerHTML = "";
+
+        data.forEach((task) => {
+          container.innerHTML += `
+            <div class="task">
+                <div class="task-header">
+                    <b>${task.title}</b>
+                    <span class="status ${task.status}">
+                        ${task.status}
+                    </span>
+                </div>
+
+                <select onchange="updateStatus(${task.id}, this.value)">
+                    <option value="todo">todo</option>
+                    <option value="in_progress">in_progress</option>
+                    <option value="done">done</option>
+                    <option value="blocked">blocked</option>
+                </select>
+
+                <br>
+                <button class="delete" onclick="deleteTask(${task.id})">
+                    Delete
+                </button>
+            </div>
+        `;
+        });
+      }
+
+      async function addTask() {
+        const title = document.getElementById("title").value;
+
+        if (!title) return;
+
+        await fetch(API + "/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title }),
+        });
+
+        document.getElementById("title").value = "";
+        loadTasks();
+      }
+
+      async function updateStatus(id, status) {
+        await fetch(API + `/tasks/${id}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status }),
+        });
+
+        loadTasks();
+      }
+
+      async function deleteTask(id) {
+        await fetch(API + `/tasks/${id}`, {
+          method: "DELETE",
+        });
+
+        loadTasks();
+      }
+
+      loadTasks();
+    </script>
+  </body>
+</html>
